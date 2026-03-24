@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>JobBridge — Job search</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='search.css') }}" />
+</head>
+<body>
+  <div class="page-bg" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">JB</span>
+        <div>
+          <h1 class="brand-title">JobBridge</h1>
+          <p class="brand-tagline">Aggregate search across LinkedIn, Indeed, Wellfound & Glassdoor</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="panel search-panel" aria-labelledby="search-heading">
+      <div class="panel-head search-head">
+        <h2 id="search-heading" class="panel-title">Search</h2>
+        <p class="panel-desc">One query across LinkedIn, Indeed, Wellfound & Glassdoor · may take a few minutes</p>
+      </div>
+
+      <form id="search-form" class="search-form" novalidate>
+        <div class="search-toolbar">
+          <div class="toolbar-field toolbar-keywords">
+            <label class="label" for="search_term">Keywords</label>
+            <div class="input-clear-wrap">
+              <input
+                type="text"
+                id="search_term"
+                name="search_term"
+                required
+                placeholder="Job title or skills"
+                autocomplete="off"
+                class="input input-has-clear"
+              />
+              <button
+                type="button"
+                class="input-clear-btn"
+                id="search-clear"
+                aria-label="Clear keywords"
+                title="Clear"
+                hidden
+              >
+                <span class="input-clear-icon" aria-hidden="true">×</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="toolbar-field toolbar-date">
+            <label class="label" for="date_preset">Posted</label>
+            <div class="select-wrap">
+              <select id="date_preset" name="date_preset" class="input select" aria-label="Posted within">
+                <option value="today" selected>Today</option>
+                <option value="3days">3 days</option>
+                <option value="week">7 days</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="toolbar-field toolbar-country">
+            <label class="label" for="country-select">Country</label>
+            <div class="select-wrap">
+              <select id="country-select" name="country_cca2" class="input select" required aria-label="Country or region">
+                <option value="">Loading…</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="toolbar-field toolbar-remote">
+            <span class="label label-remote" id="remote-label">Remote</span>
+            <label class="switch switch-toolbar" title="Remote roles only">
+              <input type="checkbox" name="is_remote" id="is_remote" checked aria-labelledby="remote-label" />
+              <span class="switch-track" aria-hidden="true"></span>
+              <span class="switch-label switch-label-full">Only remote</span>
+            </label>
+          </div>
+
+          <div class="toolbar-actions">
+            <span class="label label-spacer" aria-hidden="true">&nbsp;</span>
+            <button type="submit" id="submit-btn" class="btn btn-primary">
+              <span class="btn-text">Search</span>
+              <span class="btn-spinner" hidden aria-hidden="true"></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="search-platforms" role="group" aria-labelledby="platforms-label">
+          <span class="label platforms-label" id="platforms-label">Job platforms</span>
+          <div class="platform-checkboxes">
+            <label class="platform-option">
+              <input
+                type="checkbox"
+                class="platform-site-cb"
+                id="platform-linkedin"
+                value="linkedin"
+                checked
+              />
+              <span>LinkedIn</span>
+            </label>
+            <label class="platform-option">
+              <input
+                type="checkbox"
+                class="platform-site-cb"
+                id="platform-indeed"
+                value="indeed"
+                checked
+              />
+              <span>Indeed</span>
+            </label>
+            <label class="platform-option">
+              <input
+                type="checkbox"
+                class="platform-site-cb"
+                id="platform-wellfound"
+                value="wellfound"
+                checked
+              />
+              <span>Wellfound</span>
+            </label>
+            <label class="platform-option">
+              <input
+                type="checkbox"
+                class="platform-site-cb"
+                id="platform-glassdoor"
+                value="glassdoor"
+                checked
+              />
+              <span>Glassdoor</span>
+            </label>
+          </div>
+        </div>
+
+        <p class="field-hint toolbar-hint" id="ww-hint" hidden>Worldwide skips Glassdoor.</p>
+      </form>
+    </section>
+
+    <div id="feedback" class="feedback" aria-live="polite">
+      <p id="status" class="status"></p>
+      <p id="error" class="error" role="alert" hidden></p>
+    </div>
+
+    <section class="panel results-panel" id="results-section" aria-labelledby="results-heading">
+      <div class="panel-head results-head">
+        <h2 id="results-heading" class="panel-title">Results</h2>
+        <span id="result-count" class="result-badge" aria-live="polite" hidden></span>
+      </div>
+      <div class="table-scroll">
+        <table class="jobs" aria-describedby="result-count">
+          <thead>
+            <tr>
+              <th scope="col">Title</th>
+              <th scope="col">Company</th>
+              <th scope="col">Location</th>
+              <th scope="col">Site</th>
+              <th scope="col">Listing</th>
+              <th scope="col">Links</th>
+            </tr>
+          </thead>
+          <tbody id="jobs-body">
+            <tr class="jobs-placeholder" id="jobs-placeholder-row">
+              <td colspan="6" class="jobs-placeholder-cell">
+                Run a search to load roles. Matches are shown here, 15 per page.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <nav class="pagination" id="pagination" aria-label="Results pages" hidden>
+        <button type="button" id="page-prev" class="btn btn-page">Previous</button>
+        <span id="page-info" class="page-info" aria-live="polite"></span>
+        <button type="button" id="page-next" class="btn btn-page">Next</button>
+      </nav>
+      <p id="empty-state" class="empty-state" hidden>No positions matched. Try broader keywords or a longer time window.</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>JobBridge · Sources may rate-limit or block automated requests</p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='search.js') }}"></script>
+</body>
+</html>
