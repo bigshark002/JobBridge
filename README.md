@@ -34,6 +34,39 @@ Open [http://127.0.0.1:5000](http://127.0.0.1:5000). Searches can take several m
 
 **Note:** Choosing **Worldwide** skips Glassdoor (the underlying **JobSpy** library has no global Glassdoor domain). **Remote only** maps to the library’s remote filters; on Indeed, date filters take priority over remote when both are set (see limitations below). Defaults in the UI include **posted: Today**, **remote on**, and all four platforms selected where applicable.
 
+### Docker (JobBridge)
+
+Run the web UI in a container (no local Python setup required). The image installs dependencies with **Poetry**, serves the app with **Gunicorn** (900s worker timeout for long scrapes), and listens on **`PORT`** (default **5000**).
+
+**Compose (recommended):**
+
+```bash
+docker compose up --build
+```
+
+Open [http://127.0.0.1:5000](http://127.0.0.1:5000). To use another host port:
+
+```bash
+JOBBRIDGE_PORT=8080 docker compose up --build
+```
+
+**Docker only:**
+
+```bash
+docker build -t jobbridge .
+docker run --rm -p 5000:5000 jobbridge
+```
+
+Custom port inside the container (e.g. some PaaS set `PORT`):
+
+```bash
+docker run --rm -e PORT=8080 -p 8080:8080 jobbridge
+```
+
+**Requirements:** [Docker Engine](https://docs.docker.com/engine/install/) with BuildKit and [Compose V2](https://docs.docker.com/compose/install/) (`docker compose`).
+
+If `docker build` fails while compiling a dependency, add build tools to the image (e.g. install `build-essential` in the `Dockerfile` `apt-get` step) and rebuild.
+
 ### Usage
 
 ```python
