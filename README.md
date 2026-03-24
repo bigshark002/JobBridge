@@ -32,7 +32,7 @@ python -m web.app
 
 Open [http://127.0.0.1:5000](http://127.0.0.1:5000). Searches can take several minutes when many sources are selected, because they run in one request.
 
-**Note:** Choosing **Worldwide** skips Glassdoor (the underlying **JobSpy** library has no global Glassdoor domain). **Remote only** maps to the library’s remote filters; on Indeed, date filters take priority over remote when both are set (see limitations below). Defaults in the UI include **posted: Today**, **remote on**, and all four platforms selected where applicable.
+**Note:** **Anywhere (no country)** or **Worldwide** runs a global-style search (no country location), skips Glassdoor, and uses the same rules as worldwide in JobSpy. **Remote only** maps to the library’s remote filters; on Indeed, date filters take priority over remote when both are set (see limitations below). Defaults in the UI include **posted: Today**, **remote on**, and all four platforms selected where applicable.
 
 ### Docker (JobBridge)
 

@@ -35,10 +35,16 @@
       });
   }
 
+  function isWorldwideScope() {
+    if (!countrySelect) return false;
+    const v = countrySelect.value;
+    return v === "WW" || v === "";
+  }
+
   function syncPlatformsWithCountry() {
     const gd = document.getElementById("platform-glassdoor");
     if (!gd || !countrySelect) return;
-    if (countrySelect.value === "WW") {
+    if (isWorldwideScope()) {
       gd.checked = false;
       gd.disabled = true;
     } else {
@@ -55,7 +61,7 @@
   }
 
   function updateWwHint() {
-    if (wwHint) wwHint.hidden = countrySelect.value !== "WW";
+    if (wwHint) wwHint.hidden = !isWorldwideScope();
     syncPlatformsWithCountry();
   }
 
@@ -165,6 +171,10 @@
     if (!Array.isArray(data)) {
       throw new Error("Invalid countries response");
     }
+    const emptyOpt = document.createElement("option");
+    emptyOpt.value = "";
+    emptyOpt.textContent = "Anywhere (no country)";
+    countrySelect.appendChild(emptyOpt);
     for (const c of data) {
       if (!c || !c.cca2) continue;
       const opt = document.createElement("option");
@@ -361,10 +371,18 @@
     const fd = new FormData(form);
     const datePreset = datePresetSelect ? datePresetSelect.value : "today";
     const sites = getSelectedSites();
+    const ccRaw = countrySelect.value;
+    if (ccRaw === "__loading__") {
+      errorEl.textContent = "Please wait for the country list to finish loading.";
+      errorEl.hidden = false;
+      return;
+    }
+    const country_cca2 =
+      ccRaw === "" ? "" : (ccRaw || "US").trim().toUpperCase();
     const payload = {
       search_term: (fd.get("search_term") || "").trim(),
       date_preset: datePreset,
-      country_cca2: (countrySelect.value || "US").trim().toUpperCase(),
+      country_cca2: country_cca2,
       is_remote: document.getElementById("is_remote").checked,
       results_wanted: 100,
       sites: sites,
@@ -444,7 +462,7 @@
     errorEl.textContent = err.message || "Failed to load countries.";
     errorEl.hidden = false;
     countrySelect.innerHTML =
-      '<option value="WW">Worldwide</option><option value="US" selected>United States</option>';
+      '<option value="">Anywhere (no country)</option><option value="WW">Worldwide</option><option value="US" selected>United States</option>';
     updateWwHint();
   });
 })();

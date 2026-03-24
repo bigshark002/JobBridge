@@ -163,20 +163,35 @@ def api_search():
         date_preset = "today"
     date_cfg = DATE_PRESETS[date_preset]
 
-    cca2 = (body.get("country_cca2") or "US").strip().upper()
+    raw_cc = body.get("country_cca2")
+    if raw_cc is None:
+        cca2 = "US"
+        use_anywhere = False
+    elif isinstance(raw_cc, str) and raw_cc.strip() == "":
+        use_anywhere = True
+        cca2 = None
+    else:
+        use_anywhere = False
+        cca2 = str(raw_cc).strip().upper()
+
     is_remote = bool(body.get("is_remote"))
     results_wanted = int(body.get("results_wanted") or 50)
     results_wanted = max(5, min(results_wanted, 100))
 
     countries = get_countries()
-    row = next((c for c in countries if c["cca2"].upper() == cca2), None)
-    if not row:
-        return jsonify({"error": "Unknown country"}), 400
+    if use_anywhere:
+        country_indeed = "worldwide"
+        location_label = None
+        sites_scope = "WW"
+    else:
+        row = next((c for c in countries if c["cca2"].upper() == cca2), None)
+        if not row:
+            return jsonify({"error": "Unknown country"}), 400
+        country_indeed = row["jobspy_country"]
+        location_label = row["name"] if cca2 != "WW" else None
+        sites_scope = cca2
 
-    country_indeed = row["jobspy_country"]
-    location_label = row["name"] if cca2 != "WW" else None
-
-    sites, sites_err = parse_requested_sites(body, cca2)
+    sites, sites_err = parse_requested_sites(body, sites_scope)
     if sites_err:
         return jsonify({"error": sites_err}), 400
 
