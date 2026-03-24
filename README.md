@@ -1,6 +1,8 @@
 <img src="https://github.com/cullenwatson/JobSpy/assets/78247585/ae185b7e-e444-4712-8bb9-fa97f53e896b" width="400">
 
-**JobSpy** is a job scraping library with the goal of aggregating all the jobs from popular job boards with one tool.
+**JobBridge** is the branded web app shipped in this repository (`web/`): a Flask UI to search multiple boards, tune platforms and filters, and browse results with pagination.
+
+It is powered by **JobSpy**, a Python job scraping library that aggregates listings from popular job boards with one tool. The installable package name remains `python-jobspy` and imports use `jobspy`.
 
 ## Features
 
@@ -18,9 +20,9 @@ pip install -U python-jobspy
 
 _Python version >= [3.10](https://www.python.org/downloads/release/python-3100/) required_
 
-### Web UI (simple search page)
+### Web UI (JobBridge)
 
-A small Flask app under `web/` searches **LinkedIn**, **Indeed**, **Wellfound**, and **Glassdoor** and shows results in a table (title links use `job_url_direct` when present, otherwise `job_url`). Countries are loaded from the public [REST Countries](https://restcountries.com/) API.
+**JobBridge** is the front-end for the Flask app under `web/`. It searches **LinkedIn**, **Indeed**, **Wellfound**, and **Glassdoor** (you can enable or disable each platform before running a search), shows results in a table with **client-side pagination** (15 rows per page, up to 100 jobs per request), and loads countries from the public [REST Countries](https://restcountries.com/) API. Title links prefer `job_url_direct` when present, otherwise `job_url`.
 
 ```bash
 pip install flask
@@ -28,9 +30,9 @@ pip install flask
 python -m web.app
 ```
 
-Open [http://127.0.0.1:5000](http://127.0.0.1:5000). Searches can take several minutes because all four sources run in one request.
+Open [http://127.0.0.1:5000](http://127.0.0.1:5000). Searches can take several minutes when many sources are selected, because they run in one request.
 
-**Note:** Choosing **Worldwide** skips Glassdoor (JobSpy has no global Glassdoor domain). **Remote only** maps to the library’s remote filters; on Indeed, date filters take priority over remote when both are set (see limitations below).
+**Note:** Choosing **Worldwide** skips Glassdoor (the underlying **JobSpy** library has no global Glassdoor domain). **Remote only** maps to the library’s remote filters; on Indeed, date filters take priority over remote when both are set (see limitations below). Defaults in the UI include **posted: Today**, **remote on**, and all four platforms selected where applicable.
 
 ### Usage
 
