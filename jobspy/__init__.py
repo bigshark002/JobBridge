@@ -55,6 +55,7 @@ def scrape_jobs(
     wellfound_date_posted: str | None = None,
     wellfound_country_name: str | None = None,
     wellfound_api_url: str | None = None,
+    request_timeout: int = 60,
     **kwargs,
 ) -> pd.DataFrame:
     """
@@ -111,6 +112,7 @@ def scrape_jobs(
         wellfound_date_posted=wellfound_date_posted,
         wellfound_country_name=wellfound_country_name,
         wellfound_api_url=wellfound_api_url,
+        request_timeout=request_timeout,
     )
 
     def scrape_site(site: Site) -> Tuple[str, JobResponse]:

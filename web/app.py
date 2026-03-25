@@ -210,6 +210,7 @@ def api_search():
             ),
             linkedin_fetch_description=False,
             verbose=0,
+            request_timeout=120,
         )
     except Exception as e:
         logger.exception("scrape_jobs failed")

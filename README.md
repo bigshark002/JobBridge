@@ -139,6 +139,9 @@ Optional
 ├── user_agent (str): 
 |    override the default user agent which may be outdated
 │
+├── request_timeout (int):
+|    seconds for HTTP read timeout on scrapers that honor it (e.g. Indeed’s GraphQL API). Default 60.
+│
 ├── description_format (str): 
 |    markdown, html (Format type of the job descriptions. Default is markdown.)
 │
@@ -262,7 +265,8 @@ Bayt only uses the search_term parameter currently and searches internationally
 
 
 ## Notes
-* Indeed is the best scraper currently with no rate limiting.  
+* **Indeed read timeouts:** If you see `Read timed out` from `apis.indeed.com`, the board may be slow, your network or VPN may add latency, or a datacenter IP may be throttled. The library uses `request_timeout` (default **60**s; JobBridge’s web API uses **120**s). Increase `request_timeout` in `scrape_jobs()` if needed, or retry later / try a residential proxy.
+* Indeed is often reliable but can still rate-limit or block aggressive traffic.  
 * All the job board endpoints are capped at around 1000 jobs on a given search.  
 * LinkedIn is the most restrictive and usually rate limits around the 10th page with one ip. Proxies are a must basically.
 

@@ -110,11 +110,12 @@ class Indeed(Scraper):
         }
         api_headers_temp = api_headers.copy()
         api_headers_temp["indeed-co"] = self.api_country_code
+        timeout = self.scraper_input.request_timeout
         response = self.session.post(
             self.api_url,
             headers=api_headers_temp,
             json=payload,
-            timeout=10,
+            timeout=timeout,
             verify=False,
         )
         if not response.ok:
