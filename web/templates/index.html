@@ -160,12 +160,13 @@
               <th scope="col">Location</th>
               <th scope="col">Site</th>
               <th scope="col">Listing</th>
+              <th scope="col">Description</th>
               <th scope="col">Links</th>
             </tr>
           </thead>
           <tbody id="jobs-body">
             <tr class="jobs-placeholder" id="jobs-placeholder-row">
-              <td colspan="6" class="jobs-placeholder-cell">
+              <td colspan="7" class="jobs-placeholder-cell">
                 Run a search to load roles. Matches are shown here, 15 per page.
               </td>
             </tr>
@@ -179,12 +180,34 @@
       </nav>
       <p id="empty-state" class="empty-state" hidden>No positions matched. Try broader keywords or a longer time window.</p>
     </section>
+
+    <div
+      id="job-desc-modal"
+      class="job-desc-modal"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="job-desc-title"
+    >
+      <div id="job-desc-overlay" class="job-desc-overlay" data-close="true"></div>
+      <div class="job-desc-card" role="document">
+        <div class="job-desc-head">
+          <h3 id="job-desc-title" class="job-desc-title">Job description</h3>
+          <button type="button" class="job-desc-close" id="job-desc-close" aria-label="Close">
+            ×
+          </button>
+        </div>
+        <div id="job-desc-body" class="job-desc-body"></div>
+      </div>
+    </div>
   </main>
 
   <footer class="footer">
     <p>JobBridge · Sources may rate-limit or block automated requests</p>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.5/dist/purify.min.js"></script>
   <script src="{{ url_for('static', filename='search.js') }}"></script>
 </body>
 </html>

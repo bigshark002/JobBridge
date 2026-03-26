@@ -101,6 +101,7 @@ RESULT_COLS = [
     "location",
     "site",
     "listing_type",
+    "description",
 ]
 
 # Platforms exposed in the web UI (order = default when client omits `sites`)

@@ -20,10 +20,86 @@
   const pageNext = document.getElementById("page-next");
   const pageInfo = document.getElementById("page-info");
 
+  // Job description modal
+  const jobDescModal = document.getElementById("job-desc-modal");
+  const jobDescOverlay = document.getElementById("job-desc-overlay");
+  const jobDescClose = document.getElementById("job-desc-close");
+  const jobDescTitle = document.getElementById("job-desc-title");
+  const jobDescBody = document.getElementById("job-desc-body");
+
   let allJobs = [];
   let currentPage = 1;
   /** @type {{ jobs: object[], page: number } | null} */
   let snapshotBeforeSearch = null;
+
+  function hasNonEmptyDescription(desc) {
+    if (desc == null) return false;
+    const s = String(desc);
+    if (!s) return false;
+    if (s.trim() === "" || s.toLowerCase() === "nan") return false;
+    return true;
+  }
+
+  function renderMarkdownIntoModal(md) {
+    const raw = md == null ? "" : String(md);
+    if (!jobDescBody) return;
+
+    // Use DOMPurify to keep markdown->HTML safe.
+    if (window.marked && jobDescBody) {
+      const html = window.marked.parse(raw);
+      if (window.DOMPurify) {
+        jobDescBody.innerHTML = window.DOMPurify.sanitize(html);
+      } else {
+        // Safety fallback: without DOMPurify, don't inject HTML.
+        jobDescBody.textContent = raw;
+      }
+      return;
+    }
+
+    jobDescBody.textContent = raw;
+  }
+
+  function openJobDescriptionModal(job) {
+    if (!jobDescModal) return;
+    const titleParts = [];
+    if (job && job.title) titleParts.push(String(job.title));
+    if (job && job.company) titleParts.push(String(job.company));
+
+    if (jobDescTitle) {
+      jobDescTitle.textContent =
+        titleParts.length > 0 ? titleParts.join(" · ") : "Job description";
+    }
+
+    jobDescBody.textContent = "Loading description…";
+    renderMarkdownIntoModal(job ? job.description : "");
+
+    jobDescModal.classList.add("open");
+    jobDescModal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeJobDescriptionModal() {
+    if (!jobDescModal) return;
+    jobDescModal.classList.remove("open");
+    jobDescModal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+
+  if (jobDescOverlay) {
+    jobDescOverlay.addEventListener("click", function (e) {
+      const t = e.target;
+      if (t && t.getAttribute && t.getAttribute("data-close") === "true") {
+        closeJobDescriptionModal();
+      }
+    });
+  }
+  if (jobDescClose) {
+    jobDescClose.addEventListener("click", closeJobDescriptionModal);
+  }
+  document.addEventListener("keydown", function (e) {
+    if (!jobDescModal || !jobDescModal.classList.contains("open")) return;
+    if (e.key === "Escape") closeJobDescriptionModal();
+  });
 
   function getSelectedSites() {
     return Array.from(form.querySelectorAll(".platform-site-cb:checked"))
@@ -138,7 +214,7 @@
     const tr = document.createElement("tr");
     tr.className = "jobs-placeholder";
     const td = document.createElement("td");
-    td.colSpan = 6;
+    td.colSpan = 7;
     td.className = "jobs-placeholder-cell";
     td.textContent =
       "Run a search to load roles. Matches are shown here, 15 per page.";
@@ -152,7 +228,7 @@
     const tr = document.createElement("tr");
     tr.className = "jobs-placeholder";
     const td = document.createElement("td");
-    td.colSpan = 6;
+    td.colSpan = 7;
     td.className = "jobs-placeholder-cell";
     td.textContent = "Searching…";
     tr.appendChild(td);
@@ -232,6 +308,21 @@
         ? String(job.listing_type)
         : "—";
 
+    const tdDesc = document.createElement("td");
+    const desc = job ? job.description : null;
+    if (hasNonEmptyDescription(desc)) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn-page btn-desc";
+      btn.textContent = "View detail";
+      btn.addEventListener("click", function () {
+        openJobDescriptionModal(job);
+      });
+      tdDesc.appendChild(btn);
+    } else {
+      tdDesc.textContent = "—";
+    }
+
     const tdLinks = document.createElement("td");
     const jobUrl = safeHttpUrl(job.job_url);
     const direct = safeHttpUrl(job.job_url_direct);
@@ -267,6 +358,7 @@
     tr.appendChild(tdLoc);
     tr.appendChild(tdSite);
     tr.appendChild(tdList);
+    tr.appendChild(tdDesc);
     tr.appendChild(tdLinks);
     jobsBody.appendChild(tr);
   }
@@ -311,6 +403,14 @@
     if (n === 0) {
       jobsBody.innerHTML = "";
       emptyState.hidden = false;
+      const tr = document.createElement("tr");
+      tr.className = "jobs-placeholder";
+      const td = document.createElement("td");
+      td.colSpan = 7;
+      td.className = "jobs-placeholder-cell";
+      td.textContent = "No positions matched.";
+      tr.appendChild(td);
+      jobsBody.appendChild(tr);
       if (paginationEl) paginationEl.hidden = true;
       return;
     }
