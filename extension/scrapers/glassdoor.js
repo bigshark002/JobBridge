@@ -29,7 +29,8 @@ export async function scrapeGlassdoor({
     type: "GLASSDOOR_SCRAPE",
     payload: {
       searchTerm: (title || searchTerm || "").trim() || "remote",
-      resultsWanted: Math.min(200, Math.max(resultsWanted * 4, resultsWanted)),
+      title: (title || "").trim(),
+      resultsWanted,
       fromAge: preset.glassdoorFromAge,
       datePresetLabel: preset.label,
     },

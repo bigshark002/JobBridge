@@ -5,6 +5,7 @@
  */
 
 import { FALLBACK_CSRF, GLASSDOOR_QUERY } from "./scrapers/glassdoor-query.js";
+import { jobrightSearchUrl } from "./scrapers/jobright.js";
 
 const GD_URL = "https://www.glassdoor.com/Job/remote-jobs.htm";
 const ZR_URL = "https://www.ziprecruiter.com/jobs-search?search=remote&remote=1";
@@ -91,12 +92,27 @@ async function ensureSiteTab(urlPatterns, openUrl, { navigate = false } = {}) {
   );
 }
 
+/** Run a page-context scraper with the shared title matcher preloaded. */
+async function runPageScrape(tabId, func, args) {
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    files: ["scrapers/title-match.js"],
+  });
+  const [{ result }] = await chrome.scripting.executeScript({
+    target: { tabId },
+    func,
+    args: [args],
+  });
+  return result;
+}
+
 /**
  * Runs in the Glassdoor page context.
  */
 async function glassdoorPageScrape(args) {
   const {
     searchTerm,
+    titleQuery,
     resultsWanted,
     fromAge,
     query,
@@ -105,6 +121,9 @@ async function glassdoorPageScrape(args) {
 
   const BASE = "https://www.glassdoor.com";
   const JOBS_PER_PAGE = 30;
+  const titleOk = (t) =>
+    !titleQuery || !globalThis.jbTitleMatches || globalThis.jbTitleMatches(t, titleQuery);
+  let scanned = 0;
 
   if (
     /security\s*\|\s*glassdoor/i.test(document.title) ||
@@ -146,7 +165,8 @@ async function glassdoorPageScrape(args) {
   const jobs = [];
   const seen = new Set();
   let cursor = null;
-  const maxPages = Math.min(30, Math.ceil(resultsWanted / JOBS_PER_PAGE) + 2);
+  // Keyword also matches descriptions, so page until enough titles match
+  const maxPages = 30;
   const locationId = 11047;
   const locationType = "STATE";
 
@@ -215,9 +235,11 @@ async function glassdoorPageScrape(args) {
       const jobUrl = `${BASE}/job-listing/j?jl=${listingId}`;
       if (seen.has(jobUrl)) continue;
       seen.add(jobUrl);
+      scanned += 1;
 
       const titleText =
         view.job?.jobTitleText || view.header?.jobTitleText || "";
+      if (!titleOk(titleText)) continue;
       const company = view.header?.employerNameFromSearch || "";
       const location = view.header?.locationName || "Remote";
       const listingType = (
@@ -259,17 +281,20 @@ async function glassdoorPageScrape(args) {
     if (!cursor) break;
   }
 
-  return { jobs, rawCount: jobs.length };
+  return { jobs, rawCount: scanned };
 }
 
 /**
  * Runs in the ZipRecruiter page context — HTML jobs-search (JobSpy fallback).
  */
 async function ziprecruiterPageScrape(args) {
-  const { searchTerm, resultsWanted, days, hoursOld } = args;
+  const { searchTerm, titleQuery, resultsWanted, days, hoursOld } = args;
   // Geo-redirect may land on .ie / .co.uk / etc. — stay on this origin
   const BASE = location.origin;
   const PER_PAGE = 20;
+  const titleOk = (t) =>
+    !titleQuery || !globalThis.jbTitleMatches || globalThis.jbTitleMatches(t, titleQuery);
+  let scanned = 0;
   // ZipRecruiter UI filter only allows 1, 5, 10, 30
   const zrDays = [1, 5, 10, 30].includes(Number(days)) ? Number(days) : 1;
 
@@ -311,11 +336,13 @@ async function ziprecruiterPageScrape(args) {
 
   const jobs = [];
   const seen = new Set();
-  const maxPages = Math.min(25, Math.ceil(resultsWanted / PER_PAGE) + 2);
+  const maxPages = 25;
   const cutoffMs =
     hoursOld && Number(hoursOld) > 0
       ? Date.now() - Number(hoursOld) * 3600 * 1000
       : 0;
+  // Card dates are day-only, so compare by UTC day
+  const cutoffDay = cutoffMs ? new Date(cutoffMs).toISOString().slice(0, 10) : "";
 
   for (let page = 1; page <= maxPages && jobs.length < resultsWanted; page++) {
     const params = new URLSearchParams({
@@ -374,6 +401,7 @@ async function ziprecruiterPageScrape(args) {
       const jobUrl = `${BASE}/jobs//j?lvk=${listingKey}`;
       if (seen.has(jobUrl)) continue;
       seen.add(jobUrl);
+      scanned += 1;
 
       const h = art.querySelector("h1, h2, h3");
       let titleText = h?.textContent?.trim() || "";
@@ -381,6 +409,7 @@ async function ziprecruiterPageScrape(args) {
         const img = art.querySelector("img[alt]");
         titleText = (img?.getAttribute("alt") || "").trim();
       }
+      if (!titleOk(titleText)) continue;
 
       const company =
         art
@@ -400,9 +429,8 @@ async function ziprecruiterPageScrape(args) {
         datePosted = parseRelativePosted(cardText);
       }
 
-      if (cutoffMs && datePosted) {
-        const t = Date.parse(datePosted);
-        if (!Number.isNaN(t) && t < cutoffMs) continue;
+      if (cutoffDay && /^\d{4}-\d{2}-\d{2}/.test(datePosted)) {
+        if (datePosted.slice(0, 10) < cutoffDay) continue;
       }
 
       jobs.push({
@@ -422,7 +450,7 @@ async function ziprecruiterPageScrape(args) {
     }
   }
 
-  return { jobs, rawCount: jobs.length };
+  return { jobs, rawCount: scanned };
 }
 
 async function runGlassdoorScrape(payload) {
@@ -431,18 +459,13 @@ async function runGlassdoorScrape(payload) {
       ["https://www.glassdoor.com/*"],
       GD_URL
     );
-    const [{ result }] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: glassdoorPageScrape,
-      args: [
-        {
-          searchTerm: payload.searchTerm || "",
-          resultsWanted: payload.resultsWanted || 50,
-          fromAge: payload.fromAge || 3,
-          query: GLASSDOOR_QUERY,
-          fallbackToken: FALLBACK_CSRF,
-        },
-      ],
+    const result = await runPageScrape(tab.id, glassdoorPageScrape, {
+      searchTerm: payload.searchTerm || "",
+      titleQuery: payload.title || "",
+      resultsWanted: payload.resultsWanted || 50,
+      fromAge: payload.fromAge || 3,
+      query: GLASSDOOR_QUERY,
+      fallbackToken: FALLBACK_CSRF,
     });
 
     if (!result) return { error: "Glassdoor scrape returned nothing" };
@@ -476,17 +499,12 @@ async function runZipRecruiterScrape(payload) {
     );
     // Wait for possible geo-redirect (.com → .ie etc.)
     await sleep(800);
-    const [{ result }] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: ziprecruiterPageScrape,
-      args: [
-        {
-          searchTerm: payload.searchTerm || "",
-          resultsWanted: payload.resultsWanted || 50,
-          days: payload.days || 1,
-          hoursOld: payload.hoursOld || 24,
-        },
-      ],
+    const result = await runPageScrape(tab.id, ziprecruiterPageScrape, {
+      searchTerm: payload.searchTerm || "",
+      titleQuery: payload.title || "",
+      resultsWanted: payload.resultsWanted || 50,
+      days: payload.days || 1,
+      hoursOld: payload.hoursOld || 24,
     });
 
     if (!result) return { error: "ZipRecruiter scrape returned nothing" };
@@ -509,7 +527,7 @@ async function runZipRecruiterScrape(payload) {
  * paginates swan-api when the user has a session cookie.
  */
 async function jobrightPageScrape(args) {
-  const { searchTerm, resultsWanted, hoursOld } = args;
+  const { searchTerm, searchUrl, resultsWanted, hoursOld } = args;
   const BASE = "https://jobright.ai";
   const API = "https://swan-api.jobright.ai";
 
@@ -563,7 +581,7 @@ async function jobrightPageScrape(args) {
       description: jr.jobSummary || jr.description || "",
       _isRemote: isRemote,
       _publishMs: jr.publishTime
-        ? Date.parse(String(jr.publishTime).replace(" ", "T"))
+        ? Date.parse(String(jr.publishTime).replace(" ", "T") + "Z")
         : NaN,
     };
   }
@@ -611,14 +629,11 @@ async function jobrightPageScrape(args) {
 
   const keyword = (searchTerm || "").trim();
 
-  // 1) Keyword search page (works after CF in a real tab)
+  // 1) Keyword search page — same URL format the Jobright UI produces
   if (keyword) {
-    const q = new URLSearchParams({
-      titleKeyword: keyword,
-      visit: "search",
-      location: "United States",
-    });
-    const { blocked, html, status } = await fetchHtml(`/jobs/search?${q}`);
+    const { blocked, html, status } = await fetchHtml(
+      searchUrl.replace(BASE, "")
+    );
     if (blocked) {
       return {
         error:
@@ -715,9 +730,9 @@ async function jobrightPageScrape(args) {
 
 async function runJobrightScrape(payload) {
   try {
-    const keyword = encodeURIComponent(payload.searchTerm || "");
+    const keyword = (payload.searchTerm || "").trim();
     const openUrl = keyword
-      ? `https://jobright.ai/jobs/search?titleKeyword=${keyword}&visit=search&location=United%20States`
+      ? jobrightSearchUrl(keyword, payload.daysAgo || 1)
       : "https://jobright.ai/remote-jobs";
     const { tab } = await ensureSiteTab(
       ["https://jobright.ai/*", "https://www.jobright.ai/*"],
@@ -731,6 +746,7 @@ async function runJobrightScrape(payload) {
       args: [
         {
           searchTerm: payload.searchTerm || "",
+          searchUrl: openUrl,
           resultsWanted: payload.resultsWanted || 50,
           hoursOld: payload.hoursOld || 24,
         },
@@ -758,12 +774,16 @@ async function runJobrightScrape(payload) {
 async function dicePageScrape(args) {
   const {
     searchTerm,
+    titleQuery,
     resultsWanted,
     hoursOld,
     postedDate = "ONE",
   } = args;
   const BASE = "https://www.dice.com";
   const PAGE_SIZE = 30;
+  const titleOk = (t) =>
+    !titleQuery || !globalThis.jbTitleMatches || globalThis.jbTitleMatches(t, titleQuery);
+  let scanned = 0;
 
   if (/just a moment|attention required|security check/i.test(document.title)) {
     return {
@@ -903,6 +923,10 @@ async function dicePageScrape(args) {
   let page = 1;
   let pageCount = 20;
   let emptyStreak = 0;
+  const cutoff =
+    hoursOld && Number(hoursOld) > 0
+      ? Date.now() - Number(hoursOld) * 3600 * 1000
+      : 0;
 
   while (jobs.length < resultsWanted && page <= pageCount && emptyStreak < 2) {
     const { blocked, html, status } = await fetchSearchPage(page);
@@ -930,7 +954,9 @@ async function dicePageScrape(args) {
     }
 
     const metaInner = jl.meta?.meta || jl.meta || {};
-    if (metaInner.pageCount) pageCount = Number(metaInner.pageCount) || pageCount;
+    if (metaInner.pageCount) {
+      pageCount = Math.min(30, Number(metaInner.pageCount) || pageCount);
+    }
 
     let added = 0;
     for (const row of jl.data) {
@@ -939,8 +965,15 @@ async function dicePageScrape(args) {
       const key = j.job_url || `${j.title}|${j.company}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      jobs.push(j);
       added += 1;
+      scanned += 1;
+      const tooOld =
+        cutoff && !Number.isNaN(j._postedMs) && j._postedMs < cutoff;
+      const keep = j._isRemote && !tooOld && titleOk(j.title);
+      delete j._isRemote;
+      delete j._postedMs;
+      if (keep) jobs.push(j);
+      if (jobs.length >= resultsWanted) break;
     }
 
     if (!added) emptyStreak += 1;
@@ -948,25 +981,7 @@ async function dicePageScrape(args) {
     page += 1;
   }
 
-  const cutoff =
-    hoursOld && Number(hoursOld) > 0
-      ? Date.now() - Number(hoursOld) * 3600 * 1000
-      : 0;
-
-  const filtered = jobs.filter((j) => {
-    if (j._isRemote === false) return false;
-    if (cutoff && j._postedMs && !Number.isNaN(j._postedMs)) {
-      return j._postedMs >= cutoff;
-    }
-    return true;
-  });
-
-  for (const j of filtered) {
-    delete j._isRemote;
-    delete j._postedMs;
-  }
-
-  return { jobs: filtered, rawCount: filtered.length };
+  return { jobs, rawCount: scanned };
 }
 
 async function runDiceScrape(payload) {
@@ -983,17 +998,12 @@ async function runDiceScrape(payload) {
       { navigate: true }
     );
     await sleep(1000);
-    const [{ result }] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: dicePageScrape,
-      args: [
-        {
-          searchTerm: payload.searchTerm || "",
-          resultsWanted: payload.resultsWanted || 50,
-          hoursOld: payload.hoursOld || 24,
-          postedDate: posted,
-        },
-      ],
+    const result = await runPageScrape(tab.id, dicePageScrape, {
+      searchTerm: payload.searchTerm || "",
+      titleQuery: payload.title || "",
+      resultsWanted: payload.resultsWanted || 50,
+      hoursOld: payload.hoursOld || 24,
+      postedDate: posted,
     });
 
     if (!result) return { error: "Dice scrape returned nothing" };

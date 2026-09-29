@@ -1,5 +1,7 @@
 /** Shared helpers for JobBridge extension scrapers. */
 
+import "./title-match.js";
+
 export const DATE_PRESETS = {
   today: {
     id: "today",
@@ -11,6 +13,7 @@ export const DATE_PRESETS = {
     ziprecruiterDays: 1,
     // Dice filters.postedDate facet values
     dicePostedDate: "ONE",
+    jobrightDaysAgo: 1,
   },
   "3days": {
     id: "3days",
@@ -21,6 +24,7 @@ export const DATE_PRESETS = {
     // nearest allowed ZR value that covers ~72h
     ziprecruiterDays: 5,
     dicePostedDate: "THREE",
+    jobrightDaysAgo: 3,
   },
 };
 
@@ -50,14 +54,29 @@ export function tokenizeQuery(q) {
     .filter((t) => t.length > 1);
 }
 
-/** Require every title token to appear in the job title. */
+/** Every title word (Sr = Senior, Front-End = Frontend, …) must be in the job title. */
+export function titleMatches(jobTitle, title) {
+  return globalThis.jbTitleMatches(jobTitle, title);
+}
+
 export function filterByTitle(jobs, title) {
-  const tokens = tokenizeQuery(title);
-  if (!tokens.length) return jobs;
-  return jobs.filter((j) => {
-    const blob = String(j.title || "").toLowerCase();
-    return tokens.every((t) => blob.includes(t));
-  });
+  if (!String(title || "").trim()) return jobs;
+  return jobs.filter((j) => titleMatches(j.title, title));
+}
+
+/** Pass/fail for the posted-date window on one job (unknown dates pass). */
+export function withinHours(datePosted, hoursOld) {
+  if (!hoursOld || !datePosted) return true;
+  const s = String(datePosted).trim();
+  const t = Date.parse(s);
+  if (Number.isNaN(t)) return true;
+  const cutoff = Date.now() - hoursOld * 3600 * 1000;
+  // Date-only values parse as UTC midnight; compare by day or recent jobs drop out
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const cutoffDay = new Date(cutoff).toISOString().slice(0, 10);
+    return s >= cutoffDay;
+  }
+  return t >= cutoff;
 }
 
 export function filterByStack(jobs, stack) {
@@ -72,13 +91,7 @@ export function filterByStack(jobs, stack) {
 /** Keep jobs whose date_posted is within hoursOld (when a parseable date exists). */
 export function filterByHoursOld(jobs, hoursOld) {
   if (!hoursOld) return jobs;
-  const cutoff = Date.now() - hoursOld * 3600 * 1000;
-  return jobs.filter((j) => {
-    if (!j.date_posted) return true; // keep if board didn't expose a date
-    const t = Date.parse(j.date_posted);
-    if (Number.isNaN(t)) return true;
-    return t >= cutoff;
-  });
+  return jobs.filter((j) => withinHours(j.date_posted, hoursOld));
 }
 
 export function normalizeJob(partial) {

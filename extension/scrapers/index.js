@@ -77,9 +77,18 @@ export async function scrapeJobs({
   let jobs = filterByTitle(all, titleQ);
   jobs = filterByStack(jobs, stackQ);
 
+  // One row per title + company, across all platforms (first one wins)
+  const norm = (s) =>
+    String(s || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9+#]+/g, " ")
+      .trim();
   const seen = new Set();
   jobs = jobs.filter((j) => {
-    const key = j.job_url || `${j.site}|${j.title}|${j.company}`;
+    const title = norm(j.title);
+    const company = norm(j.company);
+    const key = title && company ? `${title}|${company}` : j.job_url;
+    if (!key) return true;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

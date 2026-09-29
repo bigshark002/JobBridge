@@ -39,11 +39,15 @@ export async function scrapeLinkedIn({
   const seen = new Set();
   let start = 0;
   let page = 0;
-  const scanCap = Math.min(1000, Math.max(resultsWanted * 5, 50));
+  const matchedCount = () =>
+    filterByTitle(filterByHoursOld(jobs, preset.hoursOld), titleFilter).length;
 
-  while (jobs.length < scanCap && start < 1000) {
+  // Guest search tops out at 1000 results
+  while (matchedCount() < resultsWanted && start < 1000) {
     page += 1;
-    onProgress?.(`LinkedIn page ${page} (${preset.label})…`);
+    onProgress?.(
+      `LinkedIn page ${page} (${preset.label}, ${matchedCount()}/${resultsWanted} matching)…`
+    );
 
     const params = new URLSearchParams({
       keywords,
@@ -119,7 +123,7 @@ export async function scrapeLinkedIn({
     }
 
     start += cards.length;
-    if (jobs.length < scanCap) {
+    if (matchedCount() < resultsWanted) {
       await sleep(2000 + Math.random() * 1500);
     }
   }

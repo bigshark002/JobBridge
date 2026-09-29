@@ -33,7 +33,8 @@ export async function scrapeZipRecruiter({
     type: "ZIPRECRUITER_SCRAPE",
     payload: {
       searchTerm: (title || searchTerm || "").trim() || "remote",
-      resultsWanted: Math.min(200, Math.max(resultsWanted * 4, resultsWanted)),
+      title: (title || "").trim(),
+      resultsWanted,
       days,
       hoursOld: preset.hoursOld,
       datePresetLabel: preset.label,

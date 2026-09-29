@@ -29,7 +29,8 @@ export async function scrapeDice({
     type: "DICE_SCRAPE",
     payload: {
       searchTerm: (title || searchTerm || "").trim(),
-      resultsWanted: Math.min(200, Math.max(resultsWanted * 3, resultsWanted)),
+      title: (title || "").trim(),
+      resultsWanted,
       hoursOld: preset.hoursOld,
       postedDate: preset.dicePostedDate || "ONE",
       datePresetLabel: preset.label,

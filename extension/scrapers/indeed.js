@@ -107,15 +107,19 @@ export async function scrapeIndeed({
   const preset = resolveDatePreset(datePreset);
   const whatTerm = (title || searchTerm || "").trim();
   const titleFilter = (title || "").trim();
-  const jobs = [];
+  const matched = [];
   const seen = new Set();
+  let scanned = 0;
   let cursor = null;
   let page = 0;
-  const scanCap = Math.min(500, Math.max(resultsWanted * 5, 50));
+  // `what` also matches descriptions: title hits are spread across ~1000 results
+  const MAX_PAGES = 10;
 
-  while (jobs.length < scanCap) {
+  while (matched.length < resultsWanted && page < MAX_PAGES) {
     page += 1;
-    onProgress?.(`Indeed page ${page} (${preset.label})…`);
+    onProgress?.(
+      `Indeed page ${page} (${preset.label}, ${matched.length}/${resultsWanted} matching)…`
+    );
     const query = buildQuery(whatTerm, cursor);
     const res = await fetch(API_URL, {
       method: "POST",
@@ -140,14 +144,16 @@ export async function scrapeIndeed({
     const results = search.results || [];
     if (!results.length) break;
 
+    const pageJobs = [];
     for (const row of results) {
       const job = row.job;
       if (!job?.key) continue;
       const jobUrl = `${BASE_URL}/viewjob?jk=${job.key}`;
       if (seen.has(jobUrl)) continue;
       seen.add(jobUrl);
+      scanned += 1;
       const loc = job.location || {};
-      jobs.push(
+      pageJobs.push(
         normalizeJob({
           title: job.title,
           company: job.employer?.name || "",
@@ -163,17 +169,14 @@ export async function scrapeIndeed({
         })
       );
     }
+    matched.push(
+      ...filterByTitle(filterByHoursOld(pageJobs, preset.hoursOld), titleFilter)
+    );
 
     cursor = search.pageInfo?.nextCursor || null;
     if (!cursor) break;
   }
 
-  const filtered = filterByTitle(
-    filterByHoursOld(jobs, preset.hoursOld),
-    titleFilter
-  );
-  onProgress?.(
-    `Indeed: ${jobs.length} raw → ${filtered.length} matching title`
-  );
-  return filtered.slice(0, resultsWanted);
+  onProgress?.(`Indeed: ${scanned} scanned → ${matched.length} matching title`);
+  return matched.slice(0, resultsWanted);
 }
