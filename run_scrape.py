@@ -14,7 +14,7 @@ def main() -> None:
             # "bdjobs",
             # "google",
             # "naukri",
-            # "zip_recruiter",
+            "zip_recruiter",
             # "bayt",
         ],
         search_term="backend engineer",

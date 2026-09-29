@@ -22,7 +22,7 @@ _Python version >= [3.10](https://www.python.org/downloads/release/python-3100/)
 
 ### Web UI (JobBridge)
 
-**JobBridge** is the front-end for the Flask app under `web/`. It searches **LinkedIn**, **Indeed**, **Wellfound**, and **Glassdoor** (you can enable or disable each platform before running a search), shows results in a table with **client-side pagination** (15 rows per page, up to 100 jobs per request), and loads countries from the public [REST Countries](https://restcountries.com/) API. Title links prefer `job_url_direct` when present, otherwise `job_url`.
+**JobBridge** is the front-end for the Flask app under `web/`. It searches **LinkedIn**, **Indeed**, **Wellfound**, and **Glassdoor** (you can enable or disable each platform before running a search), shows results in a table with **client-side pagination** (15 rows per page, up to 100 jobs per request), and loads countries from a bundled list (`web/data/countries.json`). Title links prefer `job_url_direct` when present, otherwise `job_url`.
 
 ```bash
 pip install flask
@@ -267,6 +267,11 @@ Bayt only uses the search_term parameter currently and searches internationally
 ## Notes
 * **Indeed read timeouts:** If you see `Read timed out` from `apis.indeed.com`, the board may be slow, your network or VPN may add latency, or a datacenter IP may be throttled. The library uses `request_timeout` (default **60**s; JobBridge’s web API uses **120**s). Increase `request_timeout` in `scrape_jobs()` if needed, or retry later / try a residential proxy.
 * Indeed is often reliable but can still rate-limit or block aggressive traffic.  
+* **ZipRecruiter / Cloudflare:** If ZipRecruiter returns empty results or 403 errors, you can optionally route ZipRecruiter requests through **ZenRows**.
+
+  Set `ZENROWS_API_KEY=...` in your environment before running `scrape_jobs(site_name="zip_recruiter", ...)`.
+
+  When `ZENROWS_API_KEY` is set, the ZipRecruiter scraper retries ZipRecruiter’s JSON endpoint via ZenRows when it gets blocked or returns empty jobs.
 * All the job board endpoints are capped at around 1000 jobs on a given search.  
 * LinkedIn is the most restrictive and usually rate limits around the 10th page with one ip. Proxies are a must basically.
 
