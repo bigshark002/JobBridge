@@ -1,6 +1,7 @@
 /**
- * Workable search. Same filters as
- * https://jobs.workable.com/search?query=AI+engineer&workplace=remote&day_range=1
+ * Workable search without a location parameter:
+ * https://jobs.workable.com/search?query=backend+engineer&workplace=remote&day_range=1
+ * EU and UK jobs are kept from the results. day_range is 1, 2, or 3.
  */
 
 import { isEuUkRemote } from "./eu.js";
@@ -9,9 +10,9 @@ import { normalizeJob, resolveDatePreset, stripHtml, titleMatches } from "./util
 
 function placeText(job) {
   const country = job.location?.countryName || "";
-  const extra = (job.locations || [])
-    .filter((item) => item && item !== "TELECOMMUTE")
-    .join(" ");
+  const raw = job.locations;
+  const list = Array.isArray(raw) ? raw : raw ? [String(raw)] : [];
+  const extra = list.filter((item) => item && item !== "TELECOMMUTE").join(" ");
   return `${country} ${extra}`.trim();
 }
 
@@ -37,13 +38,18 @@ export async function scrapeWorkable({ title, stack, resultsWanted, datePreset, 
       res = await fetch(url, { headers: { accept: "application/json" } });
       raw = await res.text();
     } catch (err) {
+      if (matched.length) break;
       throw new Error(`Workable request failed (${err?.message || err})`);
     }
     if (!res.ok || isBlockedResponse(res.status, raw)) {
+      if (matched.length) break;
       throw new Error(`Workable HTTP ${res.status}`);
     }
     const data = parseJson(raw, null);
-    if (!data) throw new Error("Workable returned a non-JSON response");
+    if (!data) {
+      if (matched.length) break;
+      throw new Error("Workable returned a non-JSON response");
+    }
     const jobs = data.jobs || [];
     if (!jobs.length) break;
 

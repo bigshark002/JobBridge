@@ -7,7 +7,7 @@ Standalone extension for **fully remote jobs that can be worked from the EU or t
 | Option | How it fetches |
 |--------|----------------|
 | Djinni | `djinni.co/jobs/?all_keywords=…&search_type=basic-search`. Title must contain the search term (so “AI/ML Engineer” matches “ai engineer”). Keeps Full Remote and Hybrid Remote in Ukraine, Europe, UK, or worldwide. |
-| Workable | `jobs.workable.com/search?query=…&workplace=remote&day_range=1` (2 or 3 for the other posted windows), then keep EU and UK jobs whose title contains the search term |
+| Workable | `jobs.workable.com/search?query=…&workplace=remote&day_range=1` (`day_range` is 1, 2, or 3), with no location on the request. Title must contain the search term, and the job location must be in the EU or UK. |
 | RemoteYeah | Europe and UK listing pages (`remoteyeah.com`), posted time on each card |
 | SimplyHired | Country sites (`simplyhired.co.uk`, `.de`, `.fr`, `.nl`, `.es`, `.it`, `.ie`, and others) with `l=remote`. A header rule swaps the User-Agent so Cloudflare does not return 403 |
 | Remote Rocketship | Newest jobs embedded on the Europe and UK pages. An optional subscriber API key pages `POST /api/openclaw/jobs/` |

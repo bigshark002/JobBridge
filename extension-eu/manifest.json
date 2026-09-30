@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "JobBridge EU Fetch",
-  "version": "1.2.1",
+  "version": "1.2.5",
   "description": "Fetch fully remote EU and UK jobs from Djinni, Workable, RemoteYeah, SimplyHired, Remote Rocketship, NoDesk, G2i, and LinkedIn, then download Excel.",
   "action": {
     "default_popup": "popup.html",
