@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>JobBridge EU Fetch</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="brand">
+      <img class="flag" src="icons/icon48.png" alt="" width="36" height="36" />
+      <div>
+        <h1>JobBridge EU</h1>
+        <p class="sub">Fully remote · EU + UK</p>
+      </div>
+    </header>
+
+    <form id="fetch-form" autocomplete="off">
+      <fieldset class="platforms">
+        <legend>Platforms</legend>
+        <label class="check">
+          <input type="checkbox" name="site" value="djinni" checked />
+          Djinni
+        </label>
+        <label class="check">
+          <input type="checkbox" name="site" value="workable" checked />
+          Workable
+        </label>
+        <label class="check">
+          <input type="checkbox" name="site" value="remoteyeah" checked />
+          RemoteYeah
+        </label>
+        <label class="check">
+          <input type="checkbox" name="site" value="simplyhired" checked />
+          SimplyHired
+        </label>
+        <label class="check">
+          <input type="checkbox" name="site" value="remoterocketship" checked />
+          Remote Rocketship
+        </label>
+        <label class="check">
+          <input type="checkbox" name="site" value="nodesk" checked />
+          NoDesk
+        </label>
+        <label class="check">
+          <input type="checkbox" name="site" value="g2i" checked />
+          G2i
+        </label>
+        <label class="check">
+          <input type="checkbox" name="site" value="linkedin" checked />
+          LinkedIn
+        </label>
+      </fieldset>
+
+      <label class="field">
+        <span>Count</span>
+        <input id="count" name="count" type="number" min="1" max="200" value="50" required />
+      </label>
+
+      <label class="field">
+        <span>Posted</span>
+        <select id="date_preset" name="date_preset">
+          <option value="1" selected>1 day</option>
+          <option value="2">2 days</option>
+          <option value="3">3 days</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Title</span>
+        <input id="title" name="title" type="text" placeholder="e.g. Software Engineer (optional)" />
+      </label>
+
+      <label class="field">
+        <span>Stack</span>
+        <input id="stack" name="stack" type="text" placeholder="e.g. React TypeScript (optional)" />
+      </label>
+
+      <label class="field">
+        <span>Rocketship key</span>
+        <input id="rocketship_api_key" name="rocketship_api_key" type="password" placeholder="Optional, from your Remote Rocketship account" />
+      </label>
+      <p class="hint block">Without a key, Remote Rocketship returns the newest Europe and UK page. A subscriber key pages the full feed.</p>
+
+      <button type="submit" id="ok-btn" class="ok">OK</button>
+    </form>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <script src="popup.js"></script>
+  </body>
+</html>

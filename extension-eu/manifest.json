@@ -1,0 +1,64 @@
+{
+  "manifest_version": 3,
+  "name": "JobBridge EU Fetch",
+  "version": "1.2.1",
+  "description": "Fetch fully remote EU and UK jobs from Djinni, Workable, RemoteYeah, SimplyHired, Remote Rocketship, NoDesk, G2i, and LinkedIn, then download Excel.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "JobBridge EU Fetch",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": ["storage", "tabs", "declarativeNetRequest", "declarativeNetRequestWithHostAccess"],
+  "host_permissions": [
+    "https://djinni.co/*",
+    "https://www.linkedin.com/*",
+    "https://*.linkedin.com/*",
+    "https://jobs.workable.com/*",
+    "https://remoteyeah.com/*",
+    "https://www.simplyhired.co.uk/*",
+    "https://www.simplyhired.ie/*",
+    "https://www.simplyhired.de/*",
+    "https://www.simplyhired.fr/*",
+    "https://www.simplyhired.nl/*",
+    "https://www.simplyhired.es/*",
+    "https://www.simplyhired.it/*",
+    "https://www.simplyhired.pl/*",
+    "https://www.simplyhired.se/*",
+    "https://www.simplyhired.at/*",
+    "https://www.simplyhired.be/*",
+    "https://www.simplyhired.pt/*",
+    "https://www.simplyhired.com/*",
+    "https://simplyhired.com/*",
+    "https://www.remoterocketship.com/*",
+    "https://remoterocketship.com/*",
+    "https://nodesk.co/*",
+    "https://*.algolia.net/*",
+    "https://api.ashbyhq.com/*",
+    "https://jobs.ashbyhq.com/*"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "header_rules",
+        "enabled": true,
+        "path": "rules/headers.json"
+      }
+    ]
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
