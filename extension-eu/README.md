@@ -9,10 +9,10 @@ Standalone extension for **fully remote jobs that can be worked from the EU or t
 | Djinni | `djinni.co/jobs/?all_keywords=…&search_type=basic-search`. Title must contain the search term (so “AI/ML Engineer” matches “ai engineer”). Keeps Full Remote and Hybrid Remote in Ukraine, Europe, UK, or worldwide. |
 | Workable | `jobs.workable.com/search?query=…&workplace=remote&day_range=1` (`day_range` is 1, 2, or 3), with no location on the request. Title must contain the search term, and the job location must be in the EU or UK. |
 | RemoteYeah | `remoteyeah.com/remote-jobs-in-europe+united-kingdom`, then keep jobs whose title contains the search term |
-| SimplyHired | Country sites (`simplyhired.co.uk`, `.de`, `.fr`, `.nl`, `.es`, `.it`, `.ie`, and others) with `l=remote`. A header rule swaps the User-Agent so Cloudflare does not return 403 |
+| SimplyHired | `www.simplyhired.com/search?q=…&l=Remote&t=1` (`t` is 1, 2, or 3). Title must contain the search term. A header rule swaps the User-Agent so Cloudflare does not return 403 |
 | Remote Rocketship | Newest jobs embedded on the Europe and UK pages. An optional subscriber API key pages `POST /api/openclaw/jobs/` |
 | NoDesk | Public job index behind [nodesk.substack.com](https://nodesk.substack.com/), searched at `nodesk.co/remote-jobs` |
-| G2i | Ashby board `jobs.ashbyhq.com/g2i` |
+| Ashby | Company boards on `jobs.ashbyhq.com/{company}` (the site root has no job list). Enter slugs or URLs in Ashby boards. Remote roles whose title matches, in the EU, UK, or an unrestricted Remote location. |
 | LinkedIn | Guest search, remote, European Union then the UK. 429/999 wait and retry; jobs already found are kept. A header rule strips the extension Origin so LinkedIn treats the request as a normal browser search |
 
 ## Load in Chrome

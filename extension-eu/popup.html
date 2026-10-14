@@ -43,8 +43,8 @@
           NoDesk
         </label>
         <label class="check">
-          <input type="checkbox" name="site" value="g2i" checked />
-          G2i
+          <input type="checkbox" name="site" value="ashby" checked />
+          Ashby
         </label>
         <label class="check">
           <input type="checkbox" name="site" value="linkedin" checked />
@@ -81,6 +81,12 @@
         <input id="rocketship_api_key" name="rocketship_api_key" type="password" placeholder="Optional, from your Remote Rocketship account" />
       </label>
       <p class="hint block">Without a key, Remote Rocketship returns the newest Europe and UK page. A subscriber key pages the full feed.</p>
+
+      <label class="field">
+        <span>Ashby boards</span>
+        <input id="ashby_boards" name="ashby_boards" type="text" placeholder="notion, jobs.ashbyhq.com/linear" />
+      </label>
+      <p class="hint block">jobs.ashbyhq.com itself has no job list. Each company is a board, such as jobs.ashbyhq.com/notion.</p>
 
       <button type="submit" id="ok-btn" class="ok">OK</button>
     </form>

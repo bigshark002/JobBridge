@@ -42,7 +42,7 @@ async function run() {
     setStatus("No pending fetch. Open the extension popup and press OK.", "error");
     return;
   }
-  const { title, stack, count, sites, datePreset, rocketshipApiKey } = pendingFetch;
+  const { title, stack, count, sites, datePreset, rocketshipApiKey, ashbyBoards } = pendingFetch;
   await chrome.storage.local.remove("pendingFetch");
   const preset = resolveDatePreset(datePreset);
 
@@ -59,6 +59,7 @@ async function run() {
       count,
       datePreset: preset.id,
       rocketshipApiKey,
+      ashbyBoards,
       onProgress: (msg) => log(msg),
     });
     if (errors.length) log(`Warnings:\n- ${errors.join("\n- ")}`);

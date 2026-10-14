@@ -1,4 +1,4 @@
-import { scrapeG2i } from "./ashby.js";
+import { scrapeAshby } from "./ashby.js";
 import { scrapeLinkedIn } from "./linkedin.js";
 import { scrapeDjinni } from "./djinni.js";
 import { scrapeNodesk } from "./nodesk.js";
@@ -15,7 +15,8 @@ const SCRAPERS = {
   simplyhired: scrapeSimplyHired,
   remoterocketship: scrapeRemoteRocketship,
   nodesk: scrapeNodesk,
-  g2i: scrapeG2i,
+  ashby: scrapeAshby,
+  g2i: scrapeAshby,
   linkedin: scrapeLinkedIn,
 };
 
@@ -29,6 +30,7 @@ export async function scrapeJobs({
   count,
   datePreset,
   rocketshipApiKey,
+  ashbyBoards,
   onProgress,
 }) {
   const titleQ = (title || "").trim();
@@ -54,6 +56,7 @@ export async function scrapeJobs({
         resultsWanted,
         datePreset: preset.id,
         rocketshipApiKey,
+        ashbyBoards,
         onProgress,
       });
       all.push(...jobs);

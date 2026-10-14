@@ -2,7 +2,7 @@ const form = document.getElementById("fetch-form");
 const statusEl = document.getElementById("status");
 const okBtn = document.getElementById("ok-btn");
 
-const STORAGE_KEYS = ["title", "stack", "count", "sites", "date_preset", "rocketship_api_key"];
+const STORAGE_KEYS = ["title", "stack", "count", "sites", "date_preset", "rocketship_api_key", "ashby_boards"];
 
 function setStatus(message, kind = "") {
   statusEl.textContent = message || "";
@@ -22,10 +22,14 @@ async function restoreForm() {
     form.date_preset.value = saved.date_preset;
   }
   if (saved.rocketship_api_key) form.rocketship_api_key.value = saved.rocketship_api_key;
+  if (saved.ashby_boards) form.ashby_boards.value = saved.ashby_boards;
   const known = new Set([...form.querySelectorAll('input[name="site"]')].map((el) => el.value));
-  if (Array.isArray(saved.sites) && saved.sites.some((site) => known.has(site))) {
+  const savedSites = Array.isArray(saved.sites)
+    ? saved.sites.map((site) => (site === "g2i" ? "ashby" : site))
+    : [];
+  if (savedSites.some((site) => known.has(site))) {
     form.querySelectorAll('input[name="site"]').forEach((el) => {
-      el.checked = saved.sites.includes(el.value);
+      el.checked = savedSites.includes(el.value);
     });
   }
 }
@@ -40,6 +44,7 @@ form.addEventListener("submit", async (event) => {
     : "1";
   const sites = selectedSites();
   const rocketshipApiKey = form.rocketship_api_key.value.trim();
+  const ashbyBoards = form.ashby_boards.value.trim();
 
   if (!sites.length) {
     setStatus("Select at least one platform.", "error");
@@ -56,6 +61,7 @@ form.addEventListener("submit", async (event) => {
     sites,
     date_preset: datePreset,
     rocketship_api_key: rocketshipApiKey,
+    ashby_boards: ashbyBoards,
     pendingFetch: {
       title,
       stack,
@@ -63,6 +69,7 @@ form.addEventListener("submit", async (event) => {
       sites,
       datePreset,
       rocketshipApiKey,
+      ashbyBoards,
     },
   });
 
